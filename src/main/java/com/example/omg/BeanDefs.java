@@ -12,8 +12,7 @@ import org.springframework.http.client.AsyncClientHttpRequestFactory;
 import org.springframework.http.client.HttpComponentsAsyncClientHttpRequestFactory;
 import org.springframework.web.client.AsyncRestTemplate;
 
-import static org.apache.http.conn.params.ConnManagerParams.DEFAULT_MAX_TOTAL_CONNECTIONS;
-import static org.apache.http.conn.params.ConnPerRouteBean.DEFAULT_MAX_CONNECTIONS_PER_ROUTE;
+import java.util.Arrays;
 
 @Configuration
 public class BeanDefs {
@@ -30,6 +29,7 @@ public class BeanDefs {
 
         AsyncRestTemplate restTemplate = new AsyncRestTemplate(
                 asyncHttpRequestFactory());
+        restTemplate.setInterceptors(Arrays.asList(new MyAsyncClientHttpRequestInterceptor(), new DebugRequestInterceptor()));
         return restTemplate;
 
     }
@@ -39,13 +39,12 @@ public class BeanDefs {
         try {
             PoolingNHttpClientConnectionManager connectionManager = new PoolingNHttpClientConnectionManager(
                     new DefaultConnectingIOReactor(IOReactorConfig.DEFAULT));
-            connectionManager.setMaxTotal(DEFAULT_MAX_TOTAL_CONNECTIONS);
+            connectionManager.setMaxTotal(1024);
             connectionManager
-                    .setDefaultMaxPerRoute(DEFAULT_MAX_CONNECTIONS_PER_ROUTE);
+                    .setDefaultMaxPerRoute(32);
             RequestConfig config = RequestConfig.custom()
                     .setConnectTimeout(3000)
                     .build();
-
             CloseableHttpAsyncClient httpclient = HttpAsyncClientBuilder
                     .create()
                     .setConnectionManager(connectionManager)
